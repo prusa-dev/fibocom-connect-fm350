@@ -22,12 +22,12 @@ if ($OnlyMonitor) {
 
 Write-Host "=== $app_version ==="
 
-# COM port display name search string. Supports wildcard. Could be "*COM7*" if acm2 does not exists on your machine
+# COM port display name search string. Supports wildcard. Could be "*COM7*" if 'MD AT' port does not exists on your machine
 $COM_NAME = "*MD AT*"
 
 $APN = "internet"
-$APN_USER = ""
-$APN_PASS = ""
+#$APN_USER = ""
+#$APN_PASS = ""
 
 # Override dns settings. Example: @('8.8.8.8', '1.1.1.1')
 $DNS_OVERRIDE = @()
@@ -232,16 +232,14 @@ try {
 
                 $response += Send-ATCommand -Port $modem -Command "AT+COPS?"
                 $response += Send-ATCommand -Port $modem -Command "AT+CSQ?"
-
-                # For test
-                Send-ATCommand -Port $modem -Command "AT+GTSENRDTEMP=1"
-                Send-ATCommand -Port $modem -Command "AT+CESQ?"
-                Send-ATCommand -Port $modem -Command "AT+CGREG?"
-                Send-ATCommand -Port $modem -Command "AT+CEREG?"
-                Send-ATCommand -Port $modem -Command "AT+GTCCINFO?"
-                Send-ATCommand -Port $modem -Command "AT+GTCAINFO?"
-                Send-ATCommand -Port $modem -Command "AT+RSRP?"
-                Send-ATCommand -Port $modem -Command "AT+RSRQ?"
+                $response += Send-ATCommand -Port $modem -Command "AT+CESQ?"
+                $response += Send-ATCommand -Port $modem -Command "AT+CGREG?"
+                $response += Send-ATCommand -Port $modem -Command "AT+CEREG?"
+                $response += Send-ATCommand -Port $modem -Command "AT+GTSENRDTEMP=1"
+                $response += Send-ATCommand -Port $modem -Command "AT+GTCCINFO?"
+                $response += Send-ATCommand -Port $modem -Command "AT+GTCAINFO?"
+                $response += Send-ATCommand -Port $modem -Command "AT+RSRP?"
+                $response += Send-ATCommand -Port $modem -Command "AT+RSRQ?"
 
                 if ([string]::IsNullOrEmpty($response)) {
                     continue
@@ -261,7 +259,8 @@ try {
 
                 $oper = $response | Awk -Split '(?<=\+COPS):|,' -Filter '\+COPS:' -Action { $args[3] -replace '"', '' }
 
-                #[nullable[int]]$temp = $response | Awk -Split '[:,]' -Filter '\+MTSM:' -Action { $args[1] }
+                [nullable[int]]$temp = $response | Awk -Split '[:,]' -Filter '\+GTSENRDTEMP:' -Action { $args[2] }
+                if ($temp -gt 0) { $temp = $temp / 1000 }
 
                 $csq = $response | Awk -Split '[:,]' -Filter '\+CSQ:' -Action { [int]$args[1] }
                 $csq_perc = 0
@@ -321,9 +320,13 @@ try {
                 $lineWidth = $Host.UI.RawUI.BufferSize.Width
                 $titleWidth = 17
 
-                # if ($null -ne $temp) {
-                #     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0} $([char]0xB0)C" -f "Temp:", $temp))
-                # }
+                if ($null -ne $temp) {
+                    Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0} $([char]0xB0)C" -f "Temp:", $temp))
+                }
+                else {
+                    Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4}" -f "Temp:", '--'))
+                }
+
                 Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1} ({2})" -f "Operator:", (Invoke-NullCoalescing $oper '----'), (Invoke-NullCoalescing $mode '--')))
 
                 # if ($null -ne $mode) {
