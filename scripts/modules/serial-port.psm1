@@ -13,9 +13,8 @@ function Get-SerialPort {
             return @($port, $containerId)
         }
     }
-    else {
-        $null
-    }
+
+    return $null
 }
 
 function New-SerialPort {
@@ -47,9 +46,7 @@ function Open-SerialPort {
     )
 
     $Port.Open();
-    # while (-Not($Port.DsrHolding)) {
-    #     Start-Sleep -Seconds 1
-    # }
+
     $Port.DiscardInBuffer()
     $Port.DiscardOutBuffer()
     Register-ObjectEvent -InputObject $Port -EventName "DataReceived" -SourceIdentifier "$($Port.PortName)_DataReceived"
@@ -81,10 +78,6 @@ function Test-SerialPort {
     if (-Not($Port.IsOpen)) {
         throw "Modem port is not opened."
     }
-
-    # if (-Not($Port.DsrHolding)) {
-    #     throw "Modem port is not available."
-    # }
 }
 
 function Test-AtResponseError {
