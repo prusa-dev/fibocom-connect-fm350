@@ -4,17 +4,16 @@ function Get-NetworkInterface {
         [string] $ContainerId
     )
 
-    $ncm1ifindex = Get-NetAdapter | Where-Object {
+    $interfaceIndex = Get-NetAdapter | Where-Object {
         ($null -ne $_.Status) -and `
         ((Get-PnpDeviceProperty -InstanceId $_.PnPDeviceID -KeyName DEVPKEY_Device_ContainerId -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Data) -eq $ContainerId)
     } | Select-Object -First 1 -ExpandProperty InterfaceIndex
 
-    if ($ncm1ifindex) {
-        return $ncm1ifindex
+    if ($interfaceIndex) {
+        return $interfaceIndex
     }
-    else {
-        return $null
-    }
+
+    return $null
 }
 
 function Initialize-Network {

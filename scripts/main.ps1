@@ -199,13 +199,13 @@ try {
 
         if (-Not($OnlyMonitor)) {
             Wait-Action -ErrorAction SilentlyContinue -Message "Setup network" -Action {
-                $ncm1ifindex = Get-NetworkInterface -ContainerId $modem_containerId
-                if (-Not($ncm1ifindex)) {
+                $interfaceIndex = Get-NetworkInterface -ContainerId $modem_containerId
+                if (-Not($interfaceIndex)) {
                     Write-Error2 "Could not find network interface"
                     exit 1
                 }
 
-                Initialize-Network -InterfaceIndex $ncm1ifindex -IpAddress $ip_addr -IpMask $ip_mask -IpGateway $ip_gw -IpDns $ip_dns
+                Initialize-Network -InterfaceIndex $interfaceIndex -IpAddress $ip_addr -IpMask $ip_mask -IpGateway $ip_gw -IpDns $ip_dns
             }
         }
 
