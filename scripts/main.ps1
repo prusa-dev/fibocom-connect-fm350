@@ -237,7 +237,7 @@ try {
             $lte_rsrq_max = Get-LteRsrq 34
 
             $nr_sinr_min = Get-NrSinr 0
-            $nr_sinr_max = Get-NrSinr 0
+            $nr_sinr_max = Get-NrSinr 127
             $nr_rsrp_min = Get-NrRsrp 0
             $nr_rsrp_max = Get-NrRsrp 126
             $nr_rsrq_min = Get-NrRsrq 0
@@ -253,14 +253,10 @@ try {
 
                 $response += Send-ATCommand -Port $modem -Command "AT+COPS?"
                 $response += Send-ATCommand -Port $modem -Command "AT+CSQ?"
-                $response += Send-ATCommand -Port $modem -Command "AT+CESQ?"
-                $response += Send-ATCommand -Port $modem -Command "AT+CGREG?"
-                $response += Send-ATCommand -Port $modem -Command "AT+CEREG?"
+                $response += Send-ATCommand -Port $modem -Command "AT+SIMTYPE?"
                 $response += Send-ATCommand -Port $modem -Command "AT+GTSENRDTEMP=1"
                 $response += Send-ATCommand -Port $modem -Command "AT+GTCCINFO?"
                 $response += Send-ATCommand -Port $modem -Command "AT+GTCAINFO?"
-                $response += Send-ATCommand -Port $modem -Command "AT+RSRP?"
-                $response += Send-ATCommand -Port $modem -Command "AT+RSRQ?"
 
                 if ([string]::IsNullOrEmpty($response)) {
                     continue
@@ -285,6 +281,13 @@ try {
                 }
 
                 $oper = $response | Awk -Split '(?<=\+COPS):|,' -Filter '\+COPS:' -Action { $args[3] -replace '"', '' }
+
+                $sim_type = $response | Awk -Split '[:,]' -Filter '\+SIMTYPE:' -Action { [int]$args[1] }
+                $sim_type = switch ($sim_type) {
+                    0 { 'USIM' }
+                    1 { 'ESIM' }
+                    default { 'Unknown' }
+                }
 
                 [nullable[int]]$temp = $response | Awk -Split '[:,]' -Filter '\+GTSENRDTEMP:' -Action { $args[2] }
                 if ($temp -gt 0) { $temp = $temp / 1000 }
@@ -420,12 +423,14 @@ try {
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4}" -f "Temp:", '--'))
                 }
 
+                Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1}" -f "Sim:", $sim_type))
+
                 Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1} ({2})" -f "Operator:", (Invoke-NullCoalescing $oper '----'), (Invoke-NullCoalescing $mode '--')))
 
                 if ($null -ne $mode) {
-                    #Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1}km" -f "Distance:", (Invoke-NullCoalescing $distance '--')))
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0}%   {2}" -f "Signal:", $csq_perc, (Get-Bars -Value $csq_perc -Min 0 -Max 100)))
                 }
+
 
                 $service_cell = $cells | Where-Object { $_.is_service_cell } | Select-Object -First 1
                 if ($service_cell) {
