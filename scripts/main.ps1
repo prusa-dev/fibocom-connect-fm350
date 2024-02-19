@@ -41,8 +41,8 @@ if (-Not(Get-Command | Where-Object { $_.Name -like 'Start-ThreadJob' })) {
     Import-Module -Global ./modules/ThreadJob/ThreadJob.psd1
 }
 Import-Module ./modules/common.psm1
-Import-Module ./modules/serial-port.psm1
 Import-Module ./modules/converters.psm1
+Import-Module ./modules/serial-port.psm1
 Import-Module ./modules/network.psm1
 
 try {
@@ -298,10 +298,10 @@ try {
                     $csq_perc = $csq * 100 / 31
                 }
 
-                $cells = @()
+                $cc_cells = @()
                 $cc_match = [regex]::Match($response, "\+GTCCINFO:\s*(?:(?<cell>[12],.+)\s*){0,}")
                 if ($cc_match.Success) {
-                    $cells = $cc_match.Groups['cell'].Captures | ForEach-Object {
+                    $cc_cells += $cc_match.Groups['cell'].Captures | ForEach-Object {
                         $cell = @{}
                         $cell_value = $_.Value
                         $cell_value_arr = $cell_value -split ','
@@ -431,8 +431,7 @@ try {
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0}%   {2}" -f "Signal:", $csq_perc, (Get-Bars -Value $csq_perc -Min 0 -Max 100)))
                 }
 
-
-                $service_cell = $cells | Where-Object { $_.is_service_cell } | Select-Object -First 1
+                $service_cell = $cc_cells | Where-Object { $_.is_service_cell } | Select-Object -First 1
                 if ($service_cell) {
                     if ($service_cell.rat -eq 'UMTS') {
                         Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0}dBm {2}" -f "RSCP:", $service_cell.rscp, (Get-Bars -Value $service_cell.rscp -Min $rscp_min -Max $rscp_max)))
@@ -450,10 +449,11 @@ try {
                     }
                 }
 
-                if ($cells.Length -gt 0) {
+                if ($cc_cells.Length -gt 0) {
                     Write-Host ("{0,-$lineWidth}" -f ' ')
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth}" -f "=== Cells ==="))
-                    foreach ($cell in $cells) {
+
+                    foreach ($cell in $cc_cells) {
                         Write-Host -NoNewline ("Cell {0,-4} " -f $cell.rat)
                         Write-Host -NoNewline ("{0} {1,-9} " -f "CI:", $cell.cell_id)
                         if ($cell.rat -eq 'UMTS') {
@@ -476,13 +476,16 @@ try {
                             Write-Host -NoNewline ("{0} {1,4:f0}dBm {2} " -f "RSRP:", $cell.rsrp, (Get-Bars -Value $cell.rsrp -Min $nr_rsrp_min -Max $nr_rsrp_max))
                             Write-Host -NoNewline ("{0} {1,4:f0}dB {2} " -f "RSRQ:", $cell.rsrq, (Get-Bars -Value $cell.rsrq -Min $nr_rsrq_min -Max $nr_rsrq_max))
                         }
-                        Write-Host
+
+                        $clearCount = $lineWidth - $Host.UI.RawUI.CursorPosition.X
+                        Write-Host ("{0,-$clearCount}" -f '')
                     }
                 }
 
                 if ($ca_cells.Length -gt 0) {
                     Write-Host ("{0,-$lineWidth}" -f ' ')
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth}" -f "=== Carrier Aggregation ==="))
+
                     foreach ($cell in $ca_cells) {
                         Write-Host -NoNewline ("{0,-6} " -f $cell.name)
                         Write-Host -NoNewline ("{0} {1,-5} " -f "PCI:", $cell.p_cell_id)
@@ -491,7 +494,9 @@ try {
                         Write-Host -NoNewline ("{0} {1,7}{2,-8} " -f "DL:", $cell.dl_modulation, $cell_dl_bandwidth)
                         $cell_ul_bandwidth = if ($cell.ul_bandwidth) { "@$($cell.ul_bandwidth)MHz" } else { '' }
                         Write-Host -NoNewline ("{0} {1,7}{2,-8} " -f "UL:", $cell.ul_modulation, $cell_ul_bandwidth)
-                        Write-Host
+
+                        $clearCount = $lineWidth - $Host.UI.RawUI.CursorPosition.X
+                        Write-Host ("{0,-$clearCount}" -f '')
                     }
                 }
 
