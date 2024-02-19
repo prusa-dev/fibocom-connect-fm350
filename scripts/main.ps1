@@ -25,9 +25,8 @@ Write-Host "=== $app_version ==="
 # COM port display name search string. Supports wildcard. Could be "*COM7*" if 'MD AT' port does not exists on your machine
 $COM_NAME = "*MD AT*"
 
+# Set your APN
 $APN = "internet"
-#$APN_USER = ""
-#$APN_PASS = ""
 
 # Override dns settings. Example: @('8.8.8.8', '1.1.1.1')
 $DNS_OVERRIDE = @()
