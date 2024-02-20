@@ -448,6 +448,27 @@ try {
                     }
                 }
 
+                if ($ca_cells.Length -gt 0) {
+                    $dl_bands = ($ca_cells | ForEach-Object {
+                            $cell = $_
+                            $cell_bandwidth = if ($cell.dl_bandwidth) { "@$($cell.dl_bandwidth)MHz" } else { '' }
+                            "$($cell.band)$($cell_bandwidth)"
+                        }) -join ' '
+                    $ul_bands = ($ca_cells | Where-Object { $_.upload } | ForEach-Object {
+                            $cell = $_
+                            $cell_bandwidth = if ($cell.ul_bandwidth) { "@$($cell.ul_bandwidth)MHz" } else { '' }
+                            "$($cell.band)$($cell_bandwidth)"
+                        }) -join ' '
+                    Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} DL: {1}, UL: {2}" -f "Band:", $dl_bands, $ul_bands))
+                }
+                elseif ($service_cell) {
+                    $cell_bandwidth = if ($service_cell.bandwidth) { "@$($service_cell.bandwidth)MHz" } else { '' }
+                    Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1}{2}" -f "Band:", $service_cell.band, $cell_bandwidth))
+                }
+                else {
+                    Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} --" -f "Band:"))
+                }
+
                 if ($cc_cells.Length -gt 0) {
                     Write-Host ("{0,-$lineWidth}" -f ' ')
                     Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth}" -f "=== Cells ==="))
