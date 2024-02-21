@@ -89,9 +89,15 @@ function New-SerialPort {
         [string] $Name
     )
 
-    return ([pscustomobject]@{
-            IsOpen = $false;
-        })
+    $port = [pscustomobject]@{
+        IsOpen = $false;
+    }
+
+    $port | Add-Member -MemberType ScriptMethod -Name "Dispose" -Force -Value {
+        $this.IsOpen = $false
+    }
+
+    return $port
 }
 
 
