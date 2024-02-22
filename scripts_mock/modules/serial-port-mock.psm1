@@ -19,7 +19,7 @@ $port_commands_responses = @{
         return "`r`n+GTSENRDTEMP: 1,$v`r`n"
     };
     "\+GTCCINFO\?"      = [scriptblock] {
-        $n = Get-Random -Minimum 0 -Maximum 10
+        $n = Get-Random -Minimum 0 -Maximum 15
         $r = @("`r`n+GTCCINFO: `r`n")
         if ($n -gt 0) {
             $r += "1,4,250,2,1234,001234567,3750,132,108,50,2,53,53,27`r`n"
@@ -55,7 +55,7 @@ $port_commands_responses = @{
         return $r -join ''
     };
     "\+GTCAINFO\?"      = [scriptblock] {
-        $n = Get-Random -Minimum 0 -Maximum 4
+        $n = Get-Random -Minimum 0 -Maximum 6
         $r = @("`r`n+GTCAINFO: `r`n")
         if ($n -gt 0) {
             $r += "PCC:108,132,3750,50,50,1,1,1,1,-89`r`n"
@@ -203,9 +203,38 @@ function Start-SerialPortMonitoring {
         [Parameter(Mandatory)]
         [string] $FriendlyName
     )
-    # noop
+    $null = Start-Job -Name "SerialPortMonitoring" -ArgumentList $WatchdogSourceIdentifier, $FriendlyName -InitializationScript $functions -ScriptBlock {
+        param (
+            [string] $WatchdogSourceIdentifier,
+            [string] $FriendlyName
+        )
+
+        Import-Module "$($using:PWD)/modules/serial-port.psm1"
+
+        Register-EngineEvent -SourceIdentifier $WatchdogSourceIdentifier -Forward
+        Register-WMIEvent -SourceIdentifier "DeviceChangeEvent" -Query "SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 OR EventType = 3 GROUP WITHIN 2"
+
+        try {
+            while ($true) {
+                try {
+                    $e = Wait-Event -SourceIdentifier "DeviceChangeEvent"
+                    if (-Not($e)) {
+                        Start-Sleep -Seconds 1
+                        continue
+                    }
+                    Remove-Event -EventIdentifier $e.EventIdentifier
+
+                    # noop
+                }
+                catch { }
+            }
+        }
+        finally {
+            Unregister-Event -SourceIdentifier "DeviceChangeEvent" -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Stop-SerialPortMonitoring {
-    # noop
+    Stop-Job -Name "SerialPortMonitoring" -PassThru -ErrorAction SilentlyContinue | Remove-Job | Out-Null
 }

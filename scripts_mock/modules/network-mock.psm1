@@ -31,9 +31,39 @@ function Start-NetworkMonitoring {
         [Parameter(Mandatory)]
         [string] $ContainerId
     )
-    # noop
+    $null = Start-Job -Name "NetworkMonitoring" -ArgumentList $WatchdogSourceIdentifier, $ContainerId -InitializationScript $functions -ScriptBlock {
+        param (
+            [string] $WatchdogSourceIdentifier,
+            [string] $ContainerId
+        )
+
+        Import-Module "$($using:PWD)/modules/network.psm1"
+
+        Register-EngineEvent -SourceIdentifier $WatchdogSourceIdentifier -Forward
+        Register-WMIEvent -SourceIdentifier "NetworkDisconnectEvent" -Namespace root\wmi -Class MSNdis_StatusMediaDisconnect
+
+        try {
+            while ($true) {
+                try {
+                    $e = Wait-Event -SourceIdentifier "NetworkDisconnectEvent"
+                    if (-Not($e)) {
+                        Start-Sleep -Seconds 1
+                        continue
+                    }
+                    Remove-Event -EventIdentifier $e.EventIdentifier
+
+                    # noop
+
+                }
+                catch {}
+            }
+        }
+        finally {
+            Unregister-Event -SourceIdentifier "NetworkDisconnectEvent" -Force -ErrorAction SilentlyContinue
+        }
+    }
 }
 
 function Stop-NetworkMonitoring {
-    # noop
+    Stop-Job -Name "NetworkMonitoring" -PassThru -ErrorAction SilentlyContinue | Remove-Job | Out-Null
 }
