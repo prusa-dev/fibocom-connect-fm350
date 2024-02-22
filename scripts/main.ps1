@@ -44,9 +44,6 @@ Import-Module ./modules/converters.psm1
 Import-Module ./modules/serial-port.psm1
 Import-Module ./modules/network.psm1
 
-#Import-Module ../scripts_mock/modules/serial-port-mock.psm1
-#Import-Module ../scripts_mock/modules/network-mock.psm1
-
 
 $defaultCursorSize = $Host.UI.RawUI.CursorSize;
 
@@ -376,7 +373,7 @@ try {
         }
 
         $ca_cells = @()
-        $ca_match = [regex]::Match($response, "\+GTCAINFO:\s*(?<pcc>PCC:.+)\s*(?:(?<scc>SCC\s[0-9]{1,}:.+)\s*){0,}")
+        $ca_match = [regex]::Match($response, "\+GTCAINFO:\s*(?<pcc>PCC:.+)\s*(?:(?<scc>SCC\s*[0-9]{1,}:.+)\s*){0,}")
         if ($ca_match.Success) {
             $cell = @{}
             $ca_value = $ca_match.Groups['pcc'].Value
