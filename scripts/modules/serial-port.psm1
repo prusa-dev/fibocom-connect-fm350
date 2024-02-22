@@ -25,13 +25,14 @@ function New-SerialPort {
         [string] $Name
     )
 
-    $port = new-Object System.IO.Ports.SerialPort $Name, 115200, None, 8, one
+    $port = New-Object System.IO.Ports.SerialPort $Name, 115200, None, 8, one
     $port.ReadBufferSize = 8192
     $port.ReadTimeout = 1000
     $port.WriteBufferSize = 8192
     $port.WriteTimeout = 1000
     $port.DtrEnable = $true
     $port.RtsEnable = $true
+    $port.Handshake = [System.IO.Ports.Handshake]::RequestToSend
     $port.NewLine = "`r"
 
     return $port
@@ -45,8 +46,11 @@ function Open-SerialPort {
         [System.IO.Ports.SerialPort] $Port
     )
 
-    $Port.Open();
-
+    $Port.Open()
+    # while (-Not($Port.DsrHolding)) {
+    #     Write-Verbose "$($Port | Format-List | Out-String)"
+    #     Start-Sleep -Seconds 1
+    # }
     $Port.DiscardInBuffer()
     $Port.DiscardOutBuffer()
     Register-ObjectEvent -InputObject $Port -EventName "DataReceived" -SourceIdentifier "$($Port.PortName)_DataReceived"
@@ -60,11 +64,11 @@ function Close-SerialPort {
     )
 
     Unregister-Event -SourceIdentifier "$($Port.PortName)_DataReceived" -Force -ErrorAction SilentlyContinue
-    if ($Port.IsOpen) {
-        try {
-            $Port.Close()
-        }
-        catch {}
+    try {
+        $Port.Close()
+    }
+    catch {
+        Write-Verbose "`n$_ `n$($_.FullyQualifiedErrorId) `n $($_.ScriptStackTrace)"
     }
 }
 
@@ -76,8 +80,12 @@ function Test-SerialPort {
     )
 
     if (-Not($Port.IsOpen)) {
-        throw "Modem port is not opened."
+        throw "Modem port is closed."
     }
+
+    # if (-Not($Port.DsrHolding)) {
+    #     throw "Modem port is not available."
+    # }
 }
 
 function Test-AtResponseError {
