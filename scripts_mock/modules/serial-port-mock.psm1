@@ -16,8 +16,8 @@ $port_commands_responses = @{
     "\+SIMTYPE\?"       = "`r`n+SIMTYPE: 0`r`n";
     "\+GTDUALSIM\?"     = [scriptblock] {
         $r = @()
-        $r += "`r`n+GTDUALSIM: 0,`"SUB1`",`"L`"`r`n"
-        $r += "`r`n+GTDUALSIM: 1,`"SUB2`",`"N`"`r`n"
+        $r += "`r`n+GTDUALSIM : 0, `"SUB1`", `"L`"`r`n"
+        $r += "`r`n+GTDUALSIM : 1, `"SUB2`", `"N`"`r`n"
         return $r -join ''
     };
     "\+GTSENRDTEMP=\d+" = [scriptblock] {

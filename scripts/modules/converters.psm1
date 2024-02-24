@@ -687,3 +687,36 @@ function Convert-RsrpToRssi {
         }
     }
 }
+
+function Get-SimType {
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+        [AllowNull()]
+        [nullable[int]] $Value
+    )
+    process {
+        $sim_type = switch ($Value) {
+            0 { 'USIM' }
+            1 { 'ESIM' }
+            default { 'Unknown' }
+        }
+        return $sim_type
+    }
+}
+
+function Get-SimSysMode {
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+        [AllowNull()]
+        [string] $Value
+    )
+    process {
+        $sim_sys_mode = switch ($Value) {
+            'N' { 'NR' }
+            'L' { 'LTE' }
+            'W' { 'WCDMA' }
+            default { 'Unknown' }
+        }
+        return $sim_sys_mode
+    }
+}

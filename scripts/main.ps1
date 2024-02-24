@@ -44,10 +44,6 @@ Import-Module ./modules/converters.psm1
 Import-Module ./modules/serial-port.psm1
 Import-Module ./modules/network.psm1
 
-#Import-Module ../scripts_mock/modules/serial-port-mock.psm1
-#Import-Module ../scripts_mock/modules/network-mock.psm1
-
-
 $defaultCursorSize = $Host.UI.RawUI.CursorSize;
 
 $modem = $null
@@ -58,6 +54,8 @@ $Host.UI.RawUI.CursorSize = 0
 while ($true) {
     try {
         Clear-Host
+
+        $scriptStartedAt = Get-Date
 
         Write-Host "=== $app_version ==="
 
@@ -94,9 +92,9 @@ while ($true) {
 
         $manufacturer = $response | Awk -Split '[:,]' -Filter '\+CGMI:' -Action { $args[1] -replace '"|^\s', '' }
         $model = $response | Awk -Split '[:,]' -Filter '\+FMM:' -Action { $args[1] -replace '"|^\s', '' }
-        $firmwareVer = $response | Awk -Filter '\+GTPKGVER:' -Action { $args[1] -replace '"', '' }
-        $serialNumber = $response | Awk -Filter '\+CFSN:' -Action { $args[1] -replace '"', '' }
-        $imei = $response | Awk -Filter '\+CGSN:' -Action { $args[1] -replace '"', '' }
+        $firmwareVer = $response | Awk -Split '[:,]' -Filter '\+GTPKGVER:' -Action { $args[1] -replace '"|^\s', '' }
+        $serialNumber = $response | Awk -Split '[:,]' -Filter '\+CFSN:' -Action { $args[1] -replace '"|^\s', '' }
+        $imei = $response | Awk -Split '[:,]' -Filter '\+CGSN:' -Action { $args[1] -replace '"|^\s', '' }
 
         Write-Host "Manufacturer: $manufacturer"
         Write-Host "Model: $model"
@@ -115,11 +113,28 @@ while ($true) {
         }
 
         ### Get SIM information
-        $response = Send-ATCommand -Port $modem -Command "AT+CIMI?; +CCID?"
+        $response = ''
+        $response += Send-ATCommand -Port $modem -Command "AT+GTDUALSIM?"
+        $response += Send-ATCommand -Port $modem -Command "AT+SIMTYPE?"
+        $response += Send-ATCommand -Port $modem -Command "AT+CIMI?; +CCID?"
 
-        $imsi = $response | Awk -Filter '\+CIMI:' -Action { $args[1] -replace '"', '' }
-        $ccid = $response | Awk -Filter '\+CCID:' -Action { $args[1] -replace '"', '' }
+        $dual_sim = $response | Awk -Split '[:,]' -Filter '\+GTDUALSIM\s?:' -Action {
+            [pscustomobject]@{ sim_app = [int]$args[1]; sub_app = ($args[2] -replace '"|^\s', ''); sys_mode = (($args[3] -replace '"|^\s', '') | Get-SimSysMode); }
+        }
+        $sim_type = $response | Awk -Split '[:,]' -Filter '\+SIMTYPE:' -Action { [int]$args[1] | Get-SimType }
+        $imsi = $response | Awk -Split '[:,]' -Filter '\+CIMI:' -Action { $args[1] -replace '"|^\s', '' }
+        $ccid = $response | Awk -Split '[:,]' -Filter '\+CCID:' -Action { $args[1] -replace '"|^\s', '' }
 
+        if ($dual_sim.Length -gt 0) {
+            $dual_sim | ForEach-Object {
+                $sim = $_
+                Write-Host "SIM $($sim.sim_app): $($sim.sub_app) $($sim.sys_mode)"
+            }
+        }
+        else {
+            Write-Host "SIM: Unknown"
+        }
+        Write-Host "SIM TYPE: $sim_type"
         Write-Host "IMSI: $imsi"
         Write-Host "ICCID: $ccid"
 
@@ -262,7 +277,6 @@ while ($true) {
 
             $response += Send-ATCommand -Port $modem -Command "AT+COPS?"
             $response += Send-ATCommand -Port $modem -Command "AT+CSQ?"
-            $response += Send-ATCommand -Port $modem -Command "AT+SIMTYPE?"
             $response += Send-ATCommand -Port $modem -Command "AT+GTSENRDTEMP=1"
             $response += Send-ATCommand -Port $modem -Command "AT+GTCCINFO?"
             $response += Send-ATCommand -Port $modem -Command "AT+GTCAINFO?"
@@ -290,13 +304,6 @@ while ($true) {
             }
 
             $oper = $response | Awk -Split '(?<=\+COPS):|,' -Filter '\+COPS:' -Action { $args[3] -replace '"', '' }
-
-            $sim_type = $response | Awk -Split '[:,]' -Filter '\+SIMTYPE:' -Action { [int]$args[1] }
-            $sim_type = switch ($sim_type) {
-                0 { 'USIM' }
-                1 { 'ESIM' }
-                default { 'Unknown' }
-            }
 
             [nullable[int]]$temp = $response | Awk -Split '[:,]' -Filter '\+GTSENRDTEMP:' -Action { $args[2] }
             if ($temp -gt 0) { $temp = $temp / 1000 }
@@ -425,14 +432,14 @@ while ($true) {
             $lineWidth = $Host.UI.RawUI.BufferSize.Width
             $titleWidth = 17
 
+            Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1:%d} days {1:hh}:{1:mm}:{1:ss}" -f "Uptime:", ((Get-Date) - $scriptStartedAt)))
+
             if ($null -ne $temp) {
                 Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4:f0} $([char]0xB0)C" -f "Temp:", $temp))
             }
             else {
                 Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1,4}" -f "Temp:", '--'))
             }
-
-            Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1}" -f "Sim:", $sim_type))
 
             Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} {1} ({2})" -f "Operator:", (Invoke-NullCoalescing $oper '----'), (Invoke-NullCoalescing $mode '--')))
 
