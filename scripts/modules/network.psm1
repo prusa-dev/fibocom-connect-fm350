@@ -71,13 +71,13 @@ function Start-NetworkMonitoring {
         [string] $ContainerId
     )
 
-    $null = Start-Job -Name "NetworkMonitoring" -ArgumentList $WatchdogSourceIdentifier, $ContainerId -InitializationScript $functions -ScriptBlock {
+    $null = Start-Job -Name "NetworkMonitoring" -ArgumentList $WatchdogSourceIdentifier, $ContainerId -ScriptBlock {
         param (
             [string] $WatchdogSourceIdentifier,
             [string] $ContainerId
         )
 
-        Import-Module "$($using:PWD)/modules/network.psm1"
+        Import-Module "$($using:PSScriptRoot)/network.psm1"
 
         Register-EngineEvent -SourceIdentifier $WatchdogSourceIdentifier -Forward
         Register-WMIEvent -SourceIdentifier "NetworkDisconnectEvent" -Namespace root\wmi -Class MSNdis_StatusMediaDisconnect
