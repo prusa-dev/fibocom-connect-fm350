@@ -14,6 +14,12 @@ $port_commands_responses = @{
     "\+CGPADDR=\d+"     = "`r`n+CGPADDR: 1,`"10.0.0.1`",`"`"`r`n";
     "\+GTDNS=\d+"       = "`r`n+GTDNS: 1,`"10.0.0.2`",`"10.0.0.3`"`r`n";
     "\+SIMTYPE\?"       = "`r`n+SIMTYPE: 0`r`n";
+    "\+GTDUALSIM\?"     = [scriptblock] {
+        $r = @()
+        $r += "`r`n+GTDUALSIM: 0,`"SUB1`",`"L`"`r`n"
+        $r += "`r`n+GTDUALSIM: 1,`"SUB2`",`"N`"`r`n"
+        return $r -join ''
+    };
     "\+GTSENRDTEMP=\d+" = [scriptblock] {
         $v = Get-Random -Minimum 37000 -Maximum 70000
         return "`r`n+GTSENRDTEMP: 1,$v`r`n"
