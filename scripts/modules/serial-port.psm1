@@ -1,3 +1,5 @@
+Import-Module "$PSScriptRoot/RJCP.SerialPortStream.dll"
+
 function Get-SerialPort {
     param (
         [Parameter(Mandatory)]
@@ -19,20 +21,18 @@ function Get-SerialPort {
 
 function New-SerialPort {
     [CmdletBinding()]
-    [OutputType([System.IO.Ports.SerialPort])]
+    [OutputType([RJCP.IO.Ports.SerialPortStream])]
     param(
         [Parameter(Mandatory)]
         [string] $Name
     )
 
-    $port = New-Object System.IO.Ports.SerialPort $Name, 115200, None, 8, one
+    $port = New-Object RJCP.IO.Ports.SerialPortStream $Name, 115200, 8, None, one
     $port.ReadBufferSize = 8192
     $port.ReadTimeout = 1000
     $port.WriteBufferSize = 8192
     $port.WriteTimeout = 1000
     $port.DtrEnable = $true
-    $port.RtsEnable = $true
-    $port.Handshake = [System.IO.Ports.Handshake]::RequestToSend
     $port.NewLine = "`r"
 
     return $port
@@ -43,14 +43,13 @@ function Open-SerialPort {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [System.IO.Ports.SerialPort] $Port
+        [RJCP.IO.Ports.SerialPortStream] $Port
     )
 
     $Port.Open()
-    # while (-Not($Port.DsrHolding)) {
-    #     Write-Verbose "$($Port | Format-List | Out-String)"
-    #     Start-Sleep -Seconds 1
-    # }
+    while (-Not($Port.DsrHolding)) {
+        Start-Sleep -Seconds 1
+    }
     $Port.DiscardInBuffer()
     $Port.DiscardOutBuffer()
     Register-ObjectEvent -InputObject $Port -EventName "DataReceived" -SourceIdentifier "$($Port.PortName)_DataReceived"
@@ -60,32 +59,34 @@ function Close-SerialPort {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
-        [System.IO.Ports.SerialPort] $Port
+        [RJCP.IO.Ports.SerialPortStream] $Port
     )
 
-    Unregister-Event -SourceIdentifier "$($Port.PortName)_DataReceived" -Force -ErrorAction SilentlyContinue
     try {
         $Port.Close()
     }
     catch {
         Write-Verbose "`n$_ `n$($_.FullyQualifiedErrorId) `n $($_.ScriptStackTrace)"
     }
+    $sourceIdentifier = "$($Port.PortName)_DataReceived"
+    Unregister-Event -SourceIdentifier $sourceIdentifier -Force -ErrorAction SilentlyContinue
+    Remove-Event -SourceIdentifier $sourceIdentifier -ErrorAction SilentlyContinue
 }
 
 function Test-SerialPort {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory)]
-        [System.IO.Ports.SerialPort] $Port
+        [RJCP.IO.Ports.SerialPortStream] $Port
     )
 
     if (-Not($Port.IsOpen)) {
         throw "Modem port is closed."
     }
 
-    # if (-Not($Port.DsrHolding)) {
-    #     throw "Modem port is not available."
-    # }
+    if (-Not($Port.DsrHolding)) {
+        throw "Modem port is not available."
+    }
 }
 
 function Test-AtResponseError {
@@ -116,7 +117,7 @@ function Send-ATCommand {
     param (
         [Parameter(Mandatory)]
         [ValidateNotNull()]
-        [System.IO.Ports.SerialPort] $Port,
+        [RJCP.IO.Ports.SerialPortStream] $Port,
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
@@ -145,9 +146,6 @@ function Send-ATCommand {
         Remove-Event -EventIdentifier $e.EventIdentifier
 
         $intermediate_response = $Port.ReadExisting()
-        if ([string]::IsNullOrWhiteSpace($intermediate_response)) {
-            continue;
-        }
 
         $response += $intermediate_response
 
@@ -168,13 +166,13 @@ function Start-SerialPortMonitoring {
         [string] $FriendlyName
     )
 
-    $null = Start-Job -Name "SerialPortMonitoring" -ArgumentList $WatchdogSourceIdentifier, $FriendlyName -InitializationScript $functions -ScriptBlock {
+    $null = Start-Job -Name "SerialPortMonitoring" -ArgumentList $WatchdogSourceIdentifier, $FriendlyName -ScriptBlock {
         param (
             [string] $WatchdogSourceIdentifier,
             [string] $FriendlyName
         )
 
-        Import-Module "$($using:PWD)/modules/serial-port.psm1"
+        Import-Module "$($using:PSScriptRoot)/serial-port.psm1"
 
         Register-EngineEvent -SourceIdentifier $WatchdogSourceIdentifier -Forward
         Register-WMIEvent -SourceIdentifier "DeviceChangeEvent" -Query "SELECT * FROM Win32_DeviceChangeEvent WHERE EventType = 2 OR EventType = 3 GROUP WITHIN 2"
