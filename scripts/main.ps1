@@ -125,7 +125,7 @@ while ($true) {
         $imsi = $response | Awk -Split '[:,]' -Filter '\+CIMI:' -Action { $args[1] -replace '"|^\s', '' }
         $ccid = $response | Awk -Split '[:,]' -Filter '\+CCID:' -Action { $args[1] -replace '"|^\s', '' }
 
-        if ($dual_sim.Length -gt 0) {
+        if ($dual_sim) {
             $dual_sim | ForEach-Object {
                 $sim = $_
                 Write-Host "SIM $($sim.sim_app): $($sim.sub_app) $($sim.sys_mode)"
