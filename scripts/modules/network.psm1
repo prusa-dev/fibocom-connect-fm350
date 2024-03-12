@@ -5,6 +5,7 @@ function Get-NetworkInterface {
     )
 
     $interfaceIndex = Get-NetAdapter | Where-Object {
+        ($null -ne $_.PnPDeviceID) -and `
         ($null -ne $_.Status) -and `
         ((Get-PnpDeviceProperty -InstanceId $_.PnPDeviceID -KeyName DEVPKEY_Device_ContainerId -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Data) -eq $ContainerId)
     } | Select-Object -First 1 -ExpandProperty InterfaceIndex
