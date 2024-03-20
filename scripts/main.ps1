@@ -106,9 +106,8 @@ while ($true) {
             ### Check SIM Card
             $response = Send-ATCommand -Port $modem -Command "AT+CPIN?"
             if (-Not($response -match '\+CPIN: READY')) {
-                Write-Error2 "Check SIM card."
                 Write-Error2 $response
-                exit 1
+                throw "Check SIM card."
             }
         }
 
@@ -150,6 +149,12 @@ while ($true) {
                 $response = Send-ATCommand -Port $modem -Command "AT+CGATT=0"
                 $response = Send-ATCommand -Port $modem -Command "AT+COPS=2"
 
+                $response = Send-ATCommand -Port $modem -Command "AT+GTACT=20,6,3,0"
+                if (Test-AtResponseError $response) {
+                    Write-Error2 $response
+                    throw "Could not setup bands"
+                }
+
                 $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0,`"IP`""
                 $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0"
                 $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=1,`"IPV4V6`",`"$APN`""
@@ -157,7 +162,7 @@ while ($true) {
                 $response = Send-ATCommand -Port $modem -Command "AT+COPS=0,0"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
-                    exit 1
+                    throw "Could not register on network"
                 }
 
                 $response = Send-ATCommand -Port $modem -Command "AT+CGACT=1,1"
@@ -190,9 +195,8 @@ while ($true) {
         if (-Not (Test-AtResponseError $response)) {
             $ip_addr = $response | Awk -Split '[:,]' -Filter '\+CGPADDR:' -Action { $args[2] -replace '"', '' } | Select-Object -First 1
             if (-Not($ip_addr)) {
-                Write-Error2 "Could not get ip address."
                 Write-Error2 $response
-                exit 1
+                throw "Could not get ip address."
             }
             $ip_gw = (($ip_addr -split '\.' | Select-Object -First 3) + '1') -join '.'
             $ip_mask = '255.255.255.0'
@@ -201,9 +205,8 @@ while ($true) {
             [string[]]$ip_dns = $ip_dns | Where-Object { -Not([string]::IsNullOrWhiteSpace($_)) }
         }
         elseif (-Not($OnlyMonitor)) {
-            Write-Error2 "Could not get ip address."
             Write-Error2 $response
-            exit 1
+            throw "Could not get ip address."
         }
 
         Write-Host "IP: $ip_addr"
@@ -223,8 +226,7 @@ while ($true) {
             Wait-Action -ErrorAction SilentlyContinue -Message "Setup network" -Action {
                 $interfaceIndex = Get-NetworkInterface -ContainerId $modem_containerId
                 if (-Not($interfaceIndex)) {
-                    Write-Error2 "Could not find network interface"
-                    exit 1
+                    throw "Could not find network interface"
                 }
 
                 Initialize-Network -InterfaceIndex $interfaceIndex -IpAddress $ip_addr -IpMask $ip_mask -IpGateway $ip_gw -IpDns $ip_dns
