@@ -128,7 +128,7 @@ while ($true) {
             $response = Send-ATCommand -Port $modem -Command "AT+CPIN?"
             if (-Not($response -match '\+CPIN: READY')) {
                 Write-Error2 $response
-                throw "Check SIM card."
+                throw "Check SIM card"
             }
         }
 
@@ -161,13 +161,13 @@ while ($true) {
                 $response = Send-ATCommand -Port $modem -Command "AT+GTACT=20,6,3,0"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
-                    throw "Could not setup bands"
+                    throw "Failed to setup preferred bands"
                 }
 
                 $response = Send-ATCommand -Port $modem -Command "AT+COPS=0"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
-                    throw "Could not register on network"
+                    throw "Failed to register on the network"
                 }
 
                 $response = Send-ATCommand -Port $modem -Command "AT+CGACT=1,1"
@@ -201,7 +201,7 @@ while ($true) {
             $ip_addr = $response | Awk -Split '[:,]' -Filter '\+CGPADDR:' -Action { $args[2] -replace '"', '' } | Select-Object -First 1
             if (-Not($ip_addr)) {
                 Write-Error2 $response
-                throw "Could not get ip address."
+                throw "Failed to get up IP address"
             }
             $ip_gw = (($ip_addr -split '\.' | Select-Object -First 3) + '1') -join '.'
             $ip_mask = '255.255.255.0'
@@ -211,7 +211,7 @@ while ($true) {
         }
         elseif (-Not($OnlyMonitor)) {
             Write-Error2 $response
-            throw "Could not get ip address."
+            throw "Failed to get up IP address"
         }
 
         Write-Host "IP: $ip_addr"
@@ -231,7 +231,7 @@ while ($true) {
             Wait-Action -ErrorAction SilentlyContinue -Message "Setup network" -Action {
                 $interfaceIndex = Get-NetworkInterface -ContainerId $modem_containerId
                 if (-Not($interfaceIndex)) {
-                    throw "Could not find network interface"
+                    throw "Failed to find modem network interface"
                 }
 
                 Initialize-Network -InterfaceIndex $interfaceIndex -IpAddress $ip_addr -IpMask $ip_mask -IpGateway $ip_gw -IpDns $ip_dns
