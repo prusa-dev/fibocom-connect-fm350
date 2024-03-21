@@ -148,9 +148,15 @@ while ($true) {
                 $response = Send-ATCommand -Port $modem -Command "AT+CFUN=1"
                 $response = Send-ATCommand -Port $modem -Command "AT+CGPIAF=1,0,0,0"
                 $response = Send-ATCommand -Port $modem -Command "AT+CREG=0"
+                $response = Send-ATCommand -Port $modem -Command "AT+CGREG=0"
                 $response = Send-ATCommand -Port $modem -Command "AT+CEREG=0"
                 $response = Send-ATCommand -Port $modem -Command "AT+CGATT=0"
                 $response = Send-ATCommand -Port $modem -Command "AT+COPS=2"
+
+                $response = Send-ATCommand -Port $modem -Command "AT+COPS=3,0"
+
+                $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0,`"IPV4V6`""
+                $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=1,`"IPV4V6`",`"$APN`""
 
                 $response = Send-ATCommand -Port $modem -Command "AT+GTACT=20,6,3,0"
                 if (Test-AtResponseError $response) {
@@ -158,11 +164,7 @@ while ($true) {
                     throw "Could not setup bands"
                 }
 
-                $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0,`"IP`""
-                $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0"
-                $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=1,`"IPV4V6`",`"$APN`""
-
-                $response = Send-ATCommand -Port $modem -Command "AT+COPS=0,0"
+                $response = Send-ATCommand -Port $modem -Command "AT+COPS=0"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
                     throw "Could not register on network"
