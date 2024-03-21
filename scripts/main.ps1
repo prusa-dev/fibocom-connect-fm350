@@ -102,28 +102,15 @@ while ($true) {
         Write-Host "Serial: $serialNumber"
         Write-Host "IMEI: $imei"
 
-        if (-Not($OnlyMonitor)) {
-            ### Check SIM Card
-            $response = Send-ATCommand -Port $modem -Command "AT+CPIN?"
-            if (-Not($response -match '\+CPIN: READY')) {
-                Write-Error2 $response
-                throw "Check SIM card."
-            }
-        }
-
-        ### Get SIM information
+        ### Get SIM type information
         $response = ''
         $response += Send-ATCommand -Port $modem -Command "AT+GTDUALSIM?"
         $response += Send-ATCommand -Port $modem -Command "AT+SIMTYPE?"
-        $response += Send-ATCommand -Port $modem -Command "AT+CIMI?; +CCID?"
 
         $dual_sim = $response | Awk -Split '[:,]' -Filter '\+GTDUALSIM\s?:' -Action {
             [pscustomobject]@{ sim_app = [int]$args[1]; sub_app = ($args[2] -replace '"|^\s', ''); sys_mode = (($args[3] -replace '"|^\s', '') | Get-SimSysMode); }
         }
         $sim_type = $response | Awk -Split '[:,]' -Filter '\+SIMTYPE:' -Action { [int]$args[1] | Get-SimType }
-        $imsi = $response | Awk -Split '[:,]' -Filter '\+CIMI:' -Action { $args[1] -replace '"|^\s', '' }
-        $ccid = $response | Awk -Split '[:,]' -Filter '\+CCID:' -Action { $args[1] -replace '"|^\s', '' }
-
         if ($dual_sim) {
             $dual_sim | ForEach-Object {
                 $sim = $_
@@ -134,6 +121,22 @@ while ($true) {
             Write-Host "SIM: Unknown"
         }
         Write-Host "SIM TYPE: $sim_type"
+
+
+        if (-Not($OnlyMonitor)) {
+            ### Check SIM Card
+            $response = Send-ATCommand -Port $modem -Command "AT+CPIN?"
+            if (-Not($response -match '\+CPIN: READY')) {
+                Write-Error2 $response
+                throw "Check SIM card."
+            }
+        }
+
+        ### Get SIM information
+        $response = Send-ATCommand -Port $modem -Command "AT+CIMI?; +CCID?"
+
+        $imsi = $response | Awk -Split '[:,]' -Filter '\+CIMI:' -Action { $args[1] -replace '"|^\s', '' }
+        $ccid = $response | Awk -Split '[:,]' -Filter '\+CCID:' -Action { $args[1] -replace '"|^\s', '' }
         Write-Host "IMSI: $imsi"
         Write-Host "ICCID: $ccid"
 
