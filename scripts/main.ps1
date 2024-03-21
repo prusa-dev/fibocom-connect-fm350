@@ -164,6 +164,10 @@ while ($true) {
                     throw "Failed to setup preferred bands"
                 }
 
+                # AT+GTACT also register modem on the network.
+                # Wait 3 seconds before call AT+COPS, to eliminate 'SIM busy' error
+                Start-Sleep -Seconds 3
+
                 $response = Send-ATCommand -Port $modem -Command "AT+COPS=0"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
@@ -563,6 +567,7 @@ while ($true) {
         Stop-NetworkMonitoring
         Stop-SerialPortMonitoring
         Get-Event -SourceIdentifier $watchdogEventSource -ErrorAction SilentlyContinue | Remove-Event
+        Write-Verbose "STOP"
         if ($modem) {
             Close-SerialPort -Port $modem
             $modem.Dispose()
