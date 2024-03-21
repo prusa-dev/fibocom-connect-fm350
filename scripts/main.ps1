@@ -567,7 +567,6 @@ while ($true) {
         Stop-NetworkMonitoring
         Stop-SerialPortMonitoring
         Get-Event -SourceIdentifier $watchdogEventSource -ErrorAction SilentlyContinue | Remove-Event
-        Write-Verbose "STOP"
         if ($modem) {
             Close-SerialPort -Port $modem
             $modem.Dispose()
