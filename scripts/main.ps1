@@ -335,12 +335,12 @@ while ($true) {
 
                     $cell.is_service_cell = $cell_value_arr[0] -eq 1
                     $cell.rat = [int]$cell_value_arr[1] | Get-Rat
-                    $cell.tac_lac = [int]"0x$($cell_value_arr[4])" | Get-TacOrLac
-                    $cell.cell_id = [int]"0x$($cell_value_arr[5])" | Get-CellId
+                    $cell.tac_lac = [int64]"0x$($cell_value_arr[4])" | Get-TacOrLac
+                    $cell.cell_id = [int64]"0x$($cell_value_arr[5])" | Get-CellId
                     $cell.arfcn = [int]$cell_value_arr[6]
 
                     if ($cell.rat -eq 'UMTS') {
-                        $cell.p_cell_id = [int]$cell_value_arr[7] | Get-PCellId
+                        $cell.p_cell_id = [int64]$cell_value_arr[7] | Get-PCellId
 
                         if ($cell.is_service_cell) {
                             $cell.band = [int]$cell_value_arr[8] | Get-UmtsBand
@@ -353,7 +353,7 @@ while ($true) {
                         }
                     }
                     elseif ($cell.rat -eq 'LTE') {
-                        $cell.p_cell_id = [int]$cell_value_arr[7] | Get-PCellId
+                        $cell.p_cell_id = [int64]$cell_value_arr[7] | Get-PCellId
 
                         if ($cell.is_service_cell) {
                             $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
@@ -370,7 +370,7 @@ while ($true) {
                         }
                     }
                     elseif ($cell.rat -eq 'NR') {
-                        $cell.p_cell_id = [int]$cell_value_arr[7] | Get-PCellId
+                        $cell.p_cell_id = [int64]$cell_value_arr[7] | Get-PCellId
                         if ($cell.is_service_cell) {
                             $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
                             $cell.bandwidth = [int]$cell_value_arr[9] | Get-NrBandwidthFrequency
@@ -400,7 +400,7 @@ while ($true) {
                 $cell.primary = $true
                 $cell.name = $ca_value_arr[0]
                 $cell.upload = $true
-                $cell.p_cell_id = [int]$ca_value_arr[2] | Get-PCellId
+                $cell.p_cell_id = [int64]$ca_value_arr[2] | Get-PCellId
                 $cell.arfcn = [int]$ca_value_arr[3]
                 $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
                 $cell.dl_bandwidth = [int]$ca_value_arr[4] | Get-LteBandwidthFrequency
@@ -422,7 +422,7 @@ while ($true) {
                     $cell.primary = $false
                     $cell.name = $ca_value_arr[0]
                     $cell.upload = $ca_value_arr[2] -eq 1
-                    $cell.p_cell_id = [int]$ca_value_arr[4] | Get-PCellId
+                    $cell.p_cell_id = [int64]$ca_value_arr[4] | Get-PCellId
                     $cell.arfcn = [int]$ca_value_arr[5]
                     $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
                     $cell.dl_bandwidth = [int]$ca_value_arr[6] | Get-LteBandwidthFrequency
@@ -503,7 +503,7 @@ while ($true) {
 
                 foreach ($cell in $cc_cells) {
                     Write-Host -NoNewline ("Cell {0,-4} " -f $cell.rat)
-                    Write-Host -NoNewline ("{0} {1,-9} " -f "CI:", $cell.cell_id)
+                    Write-Host -NoNewline ("{0} {1,-11} " -f "CI:", $cell.cell_id)
                     if ($cell.rat -eq 'UMTS') {
                         Write-Host -NoNewline ("{0} {1,-5} " -f "PSC:", $cell.p_cell_id)
                         Write-Host -NoNewline ("{0} {1,-11} ({2,-5}) " -f "BAND (UARFCN):", $cell.band, $cell.arfcn)

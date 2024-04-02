@@ -18,10 +18,10 @@ function Get-CellId {
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [AllowNull()]
-        [nullable[int]] $Value
+        [nullable[int64]] $Value
     )
     process {
-        if ($null -eq $Value -or $Value -ge 0x0FFFFFFF) {
+        if ($null -eq $Value -or $Value -eq 0xFFFFFFF) {
             return '--'
         }
 
@@ -33,10 +33,10 @@ function Get-PCellId {
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [AllowNull()]
-        [nullable[int]] $Value
+        [nullable[int64]] $Value
     )
     process {
-        if ($null -eq $Value -or $Value -ge 0xFFFFF) {
+        if ($null -eq $Value -or $Value -eq 0xFFFFFFF) {
             return '--'
         }
 
@@ -48,10 +48,10 @@ function Get-TacOrLac {
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
         [AllowNull()]
-        [nullable[int]] $Value
+        [nullable[int64]] $Value
     )
     process {
-        if ($null -eq $Value -or $Value -ge 0xFFFF) {
+        if ($null -eq $Value -or $Value -eq 0xFFFF -or $Value -eq 0xFFFFFFF) {
             return '--'
         }
 
