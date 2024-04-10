@@ -174,8 +174,17 @@ while ($true) {
                     throw "Failed to register on the network"
                 }
 
-                $response = Send-ATCommand -Port $modem -Command "AT+CGACT=1,1"
                 $response = Send-ATCommand -Port $modem -Command "AT+CGATT=1"
+                if (Test-AtResponseError $response) {
+                    Write-Error2 $response
+                    throw "Failed to attach to packet domain"
+                }
+
+                $response = Send-ATCommand -Port $modem -Command "AT+CGACT=1,1"
+                if (Test-AtResponseError $response) {
+                    Write-Error2 $response
+                    throw "Failed to activate PDP context"
+                }
             }
 
             Wait-Action -Message "Establish connection" -Action {
