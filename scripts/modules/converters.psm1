@@ -101,26 +101,6 @@ function Get-UmtsRscp {
     return $Value - 121
 }
 
-
-function Get-LteBandwidthFrequency {
-    param(
-        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [AllowNull()]
-        [nullable[int]] $Bandwidth
-    )
-    process {
-        switch ($Bandwidth) {
-            6 { 1.4 }
-            15 { 3 }
-            25 { 5 }
-            50 { 10 }
-            75 { 15 }
-            100 { 20 }
-            default { 0 }
-        }
-    }
-}
-
 function Get-LteRsrp {
     param(
         [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
@@ -166,33 +146,6 @@ function Get-LteSinr {
         }
 
         return $Value / 2
-    }
-}
-
-function Get-NrBandwidthFrequency {
-    param(
-        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
-        [AllowNull()]
-        [nullable[int]] $Bandwidth
-    )
-    process {
-        switch ($Bandwidth) {
-            25 { 5 }
-            50 { 10 }
-            75 { 15 }
-            100 { 20 }
-            125 { 25 }
-            150 { 30 }
-            200 { 40 }
-            250 { 50 }
-            300 { 60 }
-            400 { 80 }
-            450 { 90 }
-            500 { 100 }
-            1000 { 200 }
-            2000 { 400 }
-            default { 0 }
-        }
     }
 }
 
@@ -268,6 +221,34 @@ function Get-Modulation {
     }
 }
 
+function Convert-ToBandwidthFrequency {
+    param(
+        [Parameter(Mandatory, ValueFromPipeline, Position = 0)]
+        [AllowNull()]
+        [nullable[int]] $Bandwidth
+    )
+    process {
+        switch ($Bandwidth) {
+            6 { 1.4 }
+            15 { 3 }
+            25 { 5 }
+            50 { 10 }
+            75 { 15 }
+            100 { 20 }
+            125 { 25 }
+            150 { 30 }
+            200 { 40 }
+            250 { 50 }
+            300 { 60 }
+            400 { 80 }
+            450 { 90 }
+            500 { 100 }
+            1000 { 200 }
+            2000 { 400 }
+            default { 0 }
+        }
+    }
+}
 
 function Convert-ToLteOrNrBand {
     param(

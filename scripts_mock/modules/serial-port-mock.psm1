@@ -25,55 +25,39 @@ $port_commands_responses = @{
         return "`r`n+GTSENRDTEMP: 1,$v`r`n"
     };
     "\+GTCCINFO\?"      = [scriptblock] {
-        $n = Get-Random -Minimum 0 -Maximum 15
+        $n = 15 #Get-Random -Minimum 0 -Maximum 15
         $r = @("`r`n+GTCCINFO: `r`n")
         if ($n -gt 0) {
-            $r += "1,4,250,2,123456,123456789,3750,132,108,50,2,53,53,27`r`n"
+            $r += "1,4,250,1,1234,001234567,1721,223,103,50,8,62,62,16`r`n"
         }
         if ($n -gt 1) {
-            $r += "2,4,,,FFFFFFF,00FFFFFFF,1596,373,,52,52,18`r`n"
+            $r += "1,9,,,FFFFFFF,00FFFFFFF,723322,143,5079,500,12,67,67,81`r`n"
         }
         if ($n -gt 2) {
-            $r += "2,4,,,FFFF,00FFFFFFF,1820,373,,47,47,24`r`n"
+            $r += "2,4,,,FFFF,00FFFFFFF,1721,160,,55,55,2`r`n"
         }
-        if ($n -gt 3) {
-            $r += "2,4,,,FFFF,00FFFFFFF,200,214,,45,45,14`r`n"
+
+        if ($n -gt 2) {
+            $r += "1,2,250,1,1234,001234567,2987,92,8,22,40,,40,,`r`n"
         }
-        if ($n -gt 4) {
-            $r += "2,4,,,FFFF,00FFFFFFF,2850,396,,45,45,23`r`n"
-        }
-        if ($n -gt 5) {
-            $r += "2,4,,,FFFF,00FFFFFFF,3750,133,,43,43,11`r`n"
-        }
-        if ($n -gt 6) {
-            $r += "2,4,,,FFFF,00FFFFFFF,1820,372,,39,39,11`r`n"
-        }
-        if ($n -gt 7) {
-            $r += "2,4,,,FFFF,00FFFFFFF,3048,323,,39,39,15`r`n"
-        }
-        if ($n -gt 8) {
-            $r += "2,4,,,FFFF,00FFFFFFF,3048,396,,39,39,14`r`n"
-        }
-        if ($n -gt 9) {
-            $r += "2,4,,,FFFF,00FFFFFFF,2850,323,,39,39,12`r`n"
+
+        if ($n -gt 2) {
+            $r += "2,2,250,1,1234,001234567,2987,92,,,,22,,35,35`r`n"
         }
 
         return $r -join ''
     };
     "\+GTCAINFO\?"      = [scriptblock] {
-        $n = Get-Random -Minimum 0 -Maximum 6
+        $n = 6 #Get-Random -Minimum 0 -Maximum 15
         $r = @("`r`n+GTCAINFO: `r`n")
         if ($n -gt 0) {
-            $r += "PCC:108,132,3750,50,50,1,1,1,1,-89`r`n"
+            $r += "PCC:5079,143,723322,500,500,3,1,1,3,-83`r`n"
         }
         if ($n -gt 1) {
-            $r += "SCC 1:2,1,101,214,200,50,50,0,0,0,0,-89`r`n"
+            $r += "PCC:103,223,1721,50,50,2,1,3,3,-68`r`n"
         }
         if ($n -gt 2) {
-            $r += "SCC 2:2,0,103,373,1820,25,255,0,255,0,255,-89`r`n"
-        }
-        if ($n -gt 3) {
-            $r += "SCC3:2,0,107,396,3048,100,255,0,255,0,255,-89`r`n"
+            $r += "SCC 1:2,0,101,296,350,50,255,2,255,2,255,-68`r`n"
         }
         return $r -join ''
     };

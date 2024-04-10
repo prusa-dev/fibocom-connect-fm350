@@ -190,6 +190,9 @@ while ($true) {
                 }
             }
         }
+        else {
+            Send-ATCommand -Port $modem -Command "AT+COPS=3,0" | Out-Null
+        }
 
         Write-Host
         Write-Host "=== Connection information ==="
@@ -311,6 +314,7 @@ while ($true) {
                 10 { 'EVDO' }
                 11 { 'eMTC' }
                 12 { 'NB-IoT' }
+                13 { 'NR' }
                 default { $null }
             }
 
@@ -357,14 +361,14 @@ while ($true) {
 
                         if ($cell.is_service_cell) {
                             $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
-                            $cell.bandwidth = [int]$cell_value_arr[9] | Get-LteBandwidthFrequency
+                            $cell.bandwidth = [int]$cell_value_arr[9] | Convert-ToBandwidthFrequency
                             $cell.sinr = [int]$cell_value_arr[10] | Get-LteSinr
                             $cell.rsrp = [int]$cell_value_arr[12] | Get-LteRsrp
                             $cell.rsrq = [int]$cell_value_arr[13] | Get-LteRsrq
                         }
                         else {
                             $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
-                            $cell.bandwidth = [int]$cell_value_arr[8] | Get-LteBandwidthFrequency
+                            $cell.bandwidth = [int]$cell_value_arr[8] | Convert-ToBandwidthFrequency
                             $cell.rsrp = [int]$cell_value_arr[10] | Get-LteRsrp
                             $cell.rsrq = [int]$cell_value_arr[11] | Get-LteRsrq
                         }
@@ -373,7 +377,7 @@ while ($true) {
                         $cell.p_cell_id = [int64]$cell_value_arr[7] | Get-PCellId
                         if ($cell.is_service_cell) {
                             $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
-                            $cell.bandwidth = [int]$cell_value_arr[9] | Get-NrBandwidthFrequency
+                            $cell.bandwidth = [int]$cell_value_arr[9] | Convert-ToBandwidthFrequency
                             $cell.sinr = [int]$cell_value_arr[10] | Get-NrSinr
                             $cell.rsrp = [int]$cell_value_arr[12] | Get-NrRsrp
                             $cell.rsrq = [int]$cell_value_arr[13] | Get-NrRsrq
@@ -391,28 +395,28 @@ while ($true) {
             }
 
             $ca_cells = @()
-            $ca_match = [regex]::Match($response, "\+GTCAINFO:\s*(?<pcc>PCC:.+)\s*(?:(?<scc>SCC\s*[0-9]{1,}:.+)\s*){0,}")
+            $ca_match = [regex]::Match($response, "\+GTCAINFO:\s*(?:(?<pcc>PCC:.+)\s*){0,}(?:(?<scc>SCC\s*[0-9]{1,}:.+)\s*){0,}")
             if ($ca_match.Success) {
-                $cell = @{}
-                $ca_value = $ca_match.Groups['pcc'].Value
-                $ca_value_arr = $ca_value -split ':|,'
+                $ca_cells += $ca_match.Groups['pcc'].Captures | ForEach-Object {
+                    $cell = @{}
+                    $ca_value = $_.Value
+                    $ca_value_arr = $ca_value -split ':|,'
 
-                $cell.primary = $true
-                $cell.name = $ca_value_arr[0]
-                $cell.upload = $true
-                $cell.p_cell_id = [int64]$ca_value_arr[2] | Get-PCellId
-                $cell.arfcn = [int]$ca_value_arr[3]
-                $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
-                $cell.dl_bandwidth = [int]$ca_value_arr[4] | Get-LteBandwidthFrequency
-                $cell.ul_bandwidth = [int]$ca_value_arr[5] | Get-LteBandwidthFrequency
-                $cell.dl_mimo = [int]$ca_value_arr[6]
-                $cell.ul_mimo = [int]$ca_value_arr[7]
-                $cell.dl_modulation = [int]$ca_value_arr[8] | Get-Modulation
-                $cell.ul_modulation = [int]$ca_value_arr[9] | Get-Modulation
+                    $cell.primary = $true
+                    $cell.name = $ca_value_arr[0]
+                    $cell.upload = $true
+                    $cell.p_cell_id = [int64]$ca_value_arr[2] | Get-PCellId
+                    $cell.arfcn = [int]$ca_value_arr[3]
+                    $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
+                    $cell.dl_bandwidth = [int]$ca_value_arr[4] | Convert-ToBandwidthFrequency
+                    $cell.ul_bandwidth = [int]$ca_value_arr[5] | Convert-ToBandwidthFrequency
+                    $cell.dl_mimo = [int]$ca_value_arr[6]
+                    $cell.ul_mimo = [int]$ca_value_arr[7]
+                    $cell.dl_modulation = [int]$ca_value_arr[8] | Get-Modulation
+                    $cell.ul_modulation = [int]$ca_value_arr[9] | Get-Modulation
 
-                $ca_cells += [PSCustomObject]$cell
-
-                $cc_match.Groups['scc'].Captures
+                    [PSCustomObject]$cell
+                }
 
                 $ca_cells += $ca_match.Groups['scc'].Captures | ForEach-Object {
                     $cell = @{}
@@ -425,8 +429,8 @@ while ($true) {
                     $cell.p_cell_id = [int64]$ca_value_arr[4] | Get-PCellId
                     $cell.arfcn = [int]$ca_value_arr[5]
                     $cell.band = $cell.arfcn | Convert-ToLteOrNrBand
-                    $cell.dl_bandwidth = [int]$ca_value_arr[6] | Get-LteBandwidthFrequency
-                    $cell.ul_bandwidth = [int]$ca_value_arr[7] | Get-LteBandwidthFrequency
+                    $cell.dl_bandwidth = [int]$ca_value_arr[6] | Convert-ToBandwidthFrequency
+                    $cell.ul_bandwidth = [int]$ca_value_arr[7] | Convert-ToBandwidthFrequency
                     $cell.dl_mimo = [int]$ca_value_arr[8]
                     $cell.ul_mimo = [int]$ca_value_arr[9]
                     $cell.dl_modulation = [int]$ca_value_arr[10] | Get-Modulation
@@ -481,13 +485,13 @@ while ($true) {
                         $cell = $_
                         $cell_bandwidth = if ($cell.dl_bandwidth) { "@$($cell.dl_bandwidth)MHz" } else { '' }
                         "$($cell.band)$($cell_bandwidth)"
-                    }) -join ' '
+                    }) -join ' + '
                 $ul_bands = ($ca_cells | Where-Object { $_.upload } | ForEach-Object {
                         $cell = $_
                         $cell_bandwidth = if ($cell.ul_bandwidth) { "@$($cell.ul_bandwidth)MHz" } else { '' }
                         "$($cell.band)$($cell_bandwidth)"
-                    }) -join ' '
-                Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} DL: {1}, UL: {2}" -f "Band:", $dl_bands, $ul_bands))
+                    }) -join ' + '
+                Write-Host ("{0,-$lineWidth}" -f ("{0,-$titleWidth} DL: {1} / UL: {2}" -f "Band:", $dl_bands, $ul_bands))
             }
             elseif ($service_cell) {
                 $cell_bandwidth = if ($service_cell.bandwidth) { "@$($service_cell.bandwidth)MHz" } else { '' }
@@ -503,26 +507,26 @@ while ($true) {
 
                 foreach ($cell in $cc_cells) {
                     Write-Host -NoNewline ("Cell {0,-4} " -f $cell.rat)
-                    Write-Host -NoNewline ("{0} {1,-11} " -f "CI:", $cell.cell_id)
+                    Write-Host -NoNewline ("CI: {0,-11} " -f $cell.cell_id)
                     if ($cell.rat -eq 'UMTS') {
-                        Write-Host -NoNewline ("{0} {1,-5} " -f "PSC:", $cell.p_cell_id)
-                        Write-Host -NoNewline ("{0} {1,-11} ({2,-5}) " -f "BAND (UARFCN):", $cell.band, $cell.arfcn)
-                        Write-Host -NoNewline ("{0} {1,4:f0}dBm {2} " -f "RSCP:", $cell.rscp, (Get-Bars -Value $cell.rscp -Min $rscp_min -Max $rscp_max))
-                        Write-Host -NoNewline ("{0} {1,4:f0}dB {2} " -f "ECNO:", $cell.ecno, (Get-Bars -Value $cell.ecno -Min $ecno_min -Max $ecno_max))
+                        Write-Host -NoNewline ("PSC: {0,-5} " -f $cell.p_cell_id)
+                        Write-Host -NoNewline ("BAND (UARFCN): {0,-11} ({1,-6}) " -f $cell.band, $cell.arfcn)
+                        Write-Host -NoNewline ("RSCP: {0,4:f0}dBm {1} " -f $cell.rscp, (Get-Bars -Value $cell.rscp -Min $rscp_min -Max $rscp_max))
+                        Write-Host -NoNewline ("ECNO: {0,4:f0}dB {1} " -f $cell.ecno, (Get-Bars -Value $cell.ecno -Min $ecno_min -Max $ecno_max))
                     }
                     elseif ($cell.rat -eq 'LTE') {
-                        Write-Host -NoNewline ("{0} {1,-5} " -f "PCI:", $cell.p_cell_id)
+                        Write-Host -NoNewline ("PCI: {0,-5} " -f $cell.p_cell_id)
                         $cell_bandwidth = if ($cell.bandwidth) { "@$($cell.bandwidth)MHz" } else { '' }
-                        Write-Host -NoNewline ("{0} {1,3}{2,-8} ({3,-5}) " -f "BAND (EARFCN):", $cell.band, $cell_bandwidth, $cell.arfcn)
-                        Write-Host -NoNewline ("{0} {1,4:f0}dBm {2} " -f "RSRP:", $cell.rsrp, (Get-Bars -Value $cell.rsrp -Min $lte_rsrp_min -Max $lte_rsrp_max))
-                        Write-Host -NoNewline ("{0} {1,4:f0}dB {2} " -f "RSRQ:", $cell.rsrq, (Get-Bars -Value $cell.rsrq -Min $lte_rsrq_min -Max $lte_rsrq_max))
+                        Write-Host -NoNewline ("BAND (EARFCN): {0,-11} ({1,-6}) " -f ("{0}{1}" -f $cell.band, $cell_bandwidth), $cell.arfcn)
+                        Write-Host -NoNewline ("RSRP: {0,4:f0}dBm {1} " -f $cell.rsrp, (Get-Bars -Value $cell.rsrp -Min $lte_rsrp_min -Max $lte_rsrp_max))
+                        Write-Host -NoNewline ("RSRQ: {0,4:f0}dB {1} " -f $cell.rsrq, (Get-Bars -Value $cell.rsrq -Min $lte_rsrq_min -Max $lte_rsrq_max))
                     }
                     elseif ($cell.rat -eq 'NR') {
-                        Write-Host -NoNewline ("{0} {1,-5} " -f "PCI:", $cell.p_cell_id)
+                        Write-Host -NoNewline ("PCI: {0,-5} " -f $cell.p_cell_id)
                         $cell_bandwidth = if ($cell.bandwidth) { "@$($cell.bandwidth)MHz" } else { '' }
-                        Write-Host -NoNewline ("{0} {1,3}{2,-8} ({3,-5}) " -f "BAND (NARFCN):", $cell.band, $cell_bandwidth, $cell.arfcn)
-                        Write-Host -NoNewline ("{0} {1,4:f0}dBm {2} " -f "RSRP:", $cell.rsrp, (Get-Bars -Value $cell.rsrp -Min $nr_rsrp_min -Max $nr_rsrp_max))
-                        Write-Host -NoNewline ("{0} {1,4:f0}dB {2} " -f "RSRQ:", $cell.rsrq, (Get-Bars -Value $cell.rsrq -Min $nr_rsrq_min -Max $nr_rsrq_max))
+                        Write-Host -NoNewline ("BAND (NARFCN): {0,-11} ({1,-6}) " -f ("{0}{1}" -f $cell.band, $cell_bandwidth), $cell.arfcn)
+                        Write-Host -NoNewline ("RSRP: {0,4:f0}dBm {1} " -f $cell.rsrp, (Get-Bars -Value $cell.rsrp -Min $nr_rsrp_min -Max $nr_rsrp_max))
+                        Write-Host -NoNewline ("RSRQ: {0,4:f0}dB {1} " -f $cell.rsrq, (Get-Bars -Value $cell.rsrq -Min $nr_rsrq_min -Max $nr_rsrq_max))
                     }
 
                     $clearCount = $lineWidth - $Host.UI.RawUI.CursorPosition.X
@@ -536,12 +540,17 @@ while ($true) {
 
                 foreach ($cell in $ca_cells) {
                     Write-Host -NoNewline ("{0,-6} " -f $cell.name)
-                    Write-Host -NoNewline ("{0} {1,-5} " -f "PCI:", $cell.p_cell_id)
-                    Write-Host -NoNewline ("{0} {1,3} ({2,-5}) " -f "BAND (EARFCN):", $cell.band, $cell.arfcn)
+                    Write-Host -NoNewline ("PCI: {0,-5} " -f $cell.p_cell_id)
+                    Write-Host -NoNewline ("BAND (EARFCN): {0,3} ({1,-6}) " -f $cell.band, $cell.arfcn)
                     $cell_dl_bandwidth = if ($cell.dl_bandwidth) { "@$($cell.dl_bandwidth)MHz" } else { '' }
-                    Write-Host -NoNewline ("{0} {1,7}{2,-8} " -f "DL:", $cell.dl_modulation, $cell_dl_bandwidth)
-                    $cell_ul_bandwidth = if ($cell.ul_bandwidth) { "@$($cell.ul_bandwidth)MHz" } else { '' }
-                    Write-Host -NoNewline ("{0} {1,7}{2,-8} " -f "UL:", $cell.ul_modulation, $cell_ul_bandwidth)
+                    Write-Host -NoNewline ("DL: {0,-15} " -f ("{0}{1}" -f $cell.dl_modulation, $cell_dl_bandwidth))
+                    if ($cell.upload) {
+                        $cell_ul_bandwidth = if ($cell.ul_bandwidth) { "@$($cell.ul_bandwidth)MHz" } else { '' }
+                        Write-Host -NoNewline ("UL: {0,-15} " -f ("{0}{1}" -f $cell.ul_modulation, $cell_ul_bandwidth))
+                    }
+                    else {
+                        Write-Host -NoNewline ("UL: {0,-15} " -f "--")
+                    }
 
                     $clearCount = $lineWidth - $Host.UI.RawUI.CursorPosition.X
                     Write-Host ("{0,-$clearCount}" -f '')
