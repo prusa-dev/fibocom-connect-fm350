@@ -321,9 +321,9 @@ while ($true) {
                 8 { 'CDMA' }
                 9 { 'CDMA+EVDO' }
                 10 { 'EVDO' }
-                11 { 'eMTC' }
+                11 { '5G SA' }
                 12 { 'NB-IoT' }
-                13 { 'NR' }
+                13 { '5G NSA' }
                 default { $null }
             }
 
