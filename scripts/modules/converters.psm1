@@ -141,7 +141,7 @@ function Get-LteSinr {
     )
 
     process {
-        if ($null -eq $Value) {
+        if ($null -eq $Value -or $Value -eq 255) {
             return $null
         }
 
@@ -177,7 +177,7 @@ function Get-NrRsrq {
             return $null
         }
 
-        return $Value / 2 - 44
+        return ($Value - 87) / 2
     }
 }
 
@@ -189,11 +189,11 @@ function Get-NrSinr {
     )
 
     process {
-        if ($null -eq $Value) {
+        if ($null -eq $Value -or $Value -eq 255) {
             return $null
         }
 
-        return $Value / 2 - 24
+        return ($Value - 45) / 2 - 1
     }
 }
 
