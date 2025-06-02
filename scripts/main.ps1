@@ -15,12 +15,13 @@ $bufferSize = $Host.UI.RawUI.BufferSize
 $bufferSize.Height = 1000
 $Host.UI.RawUI.BufferSize = $bufferSize
 
-$Host.UI.RawUI.WindowTitle = $app_version
+$app_title = $app_version
 if ($OnlyMonitor) {
-    $Host.UI.RawUI.WindowTitle += " (monitor)"
+    $app_title += " (monitor)"
 }
 
-Write-Host "=== $app_version ==="
+$Host.UI.RawUI.WindowTitle = $app_title
+Write-Host "=== $app_title ==="
 
 # COM port display name search string. Supports wildcard. Could be "*COM7*" if 'MD AT' port does not exists on your machine
 $COM_NAME = "*MD AT*"
@@ -57,7 +58,7 @@ while ($true) {
 
         $scriptStartedAt = Get-Date
 
-        Write-Host "=== $app_version ==="
+        Write-Host "=== $app_title ==="
 
         $modem_port_result = Wait-Action -Message 'Search modem control port' -Action {
             while ($true) {
