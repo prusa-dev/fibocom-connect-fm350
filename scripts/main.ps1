@@ -102,6 +102,9 @@ while ($true) {
         Write-Host "Serial: $serialNumber"
         Write-Host "IMEI: $imei"
 
+        ### Detect FM350GL-16
+        $isFM350_GL_16 = "$firmwareVer".Trim().StartsWith("11600")
+
         ### Get SIM type information
         $response = ''
         $response += Send-ATCommand -Port $modem -Command "AT+GTDUALSIM?"
@@ -158,7 +161,12 @@ while ($true) {
                 $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=0,`"IPV4V6`""
                 $response = Send-ATCommand -Port $modem -Command "AT+CGDCONT=1,`"IPV4V6`",`"$APN`""
 
-                $response = Send-ATCommand -Port $modem -Command "AT+GTACT=20,6,3,0"
+                $preferredBands = "20,6,3,0"
+                if ($isFM350_GL_16) {
+                    $preferredBands = "4,3,2,0"
+                }
+
+                $response = Send-ATCommand -Port $modem -Command "AT+GTACT=$preferredBands"
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
                     throw "Failed to setup preferred bands"
