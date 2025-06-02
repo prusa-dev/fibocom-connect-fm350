@@ -168,7 +168,7 @@ while ($true) {
                 # Wait 3 seconds before call AT+COPS, to eliminate 'SIM busy' error
                 Start-Sleep -Seconds 3
 
-                $response = Send-ATCommand -Port $modem -Command "AT+COPS=0"
+                $response = Send-ATCommand -Port $modem -Command "AT+COPS=0" -TimeoutSec 60
                 if (Test-AtResponseError $response) {
                     Write-Error2 $response
                     throw "Failed to register on the network"

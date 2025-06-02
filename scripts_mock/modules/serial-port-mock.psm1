@@ -153,7 +153,10 @@ function Send-ATCommand {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $Command
+        [string] $Command,
+
+        [ValidateRange(1, [int]::MaxValue)]
+        [int] $TimeoutSec = 1
     )
 
     $response = ''

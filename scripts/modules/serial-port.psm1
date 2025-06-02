@@ -114,7 +114,10 @@ function Send-ATCommand {
 
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
-        [string] $Command
+        [string] $Command,
+
+        [ValidateRange(1, [int]::MaxValue)]
+        [int] $TimeoutSec = 1
     )
 
     $response = ''
@@ -126,12 +129,13 @@ function Send-ATCommand {
     $Port.WriteLine($Command)
 
     $waitEventAttempt = 0
+    $maxWaitEventAttempts = 10 * ($TimeoutSec -eq 1)
     while ($true) {
         Test-SerialPort -Port $Port
-        $e = Wait-Event -SourceIdentifier $sourceIdentifier -Timeout ([Math]::Max(1, [Math]::Ceiling($Port.ReadTimeout / 1000)))
+        $e = Wait-Event -SourceIdentifier $sourceIdentifier -Timeout ([Math]::Max($TimeoutSec, [Math]::Ceiling($Port.ReadTimeout / 1000)))
         if (-Not($e)) {
             $waitEventAttempt += 1
-            if ($waitEventAttempt -gt 10) {
+            if ($waitEventAttempt -gt $maxWaitEventAttempts) {
                 throw "Attempts to read the data from modem have been exhausted.`nCOMMAND: '$Command'.`nRESPONSE: '$response'";
             }
             continue;
